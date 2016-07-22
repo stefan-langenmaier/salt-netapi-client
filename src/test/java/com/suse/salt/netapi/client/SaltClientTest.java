@@ -80,20 +80,16 @@ public class SaltClientTest {
                 .withBody(JSON_LOGIN_RESPONSE)));
 
         Token token = client.login("user", "pass", AUTO);
-        verifyLoginToken(token);
-    }
-
-    private void verifyLoginToken(Token token) {
-        verify(1, postRequestedFor(urlEqualTo("/login"))
-                .withHeader("Accept", equalTo("application/json"))
-                .withHeader("Content-Type", equalTo("application/json"))
-                .withRequestBody(equalToJson(JSON_LOGIN_REQUEST)));
-
         assertEquals("Token mismatch",
                 "f248284b655724ca8a86bcab4b8df608ebf5b08b", token.getToken());
         assertEquals("EAuth mismatch", "auto", token.getEauth());
         assertEquals("User mismatch", "user", token.getUser());
         assertEquals("Perms mismatch", Arrays.asList(".*", "@wheel"), token.getPerms());
+
+        verify(1, postRequestedFor(urlEqualTo("/login"))
+                .withHeader("Accept", equalTo("application/json"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withRequestBody(equalToJson(JSON_LOGIN_REQUEST)));
     }
 
     @Test(expected = SaltUserUnauthorizedException.class)
@@ -174,12 +170,9 @@ public class SaltClientTest {
         array.add(new JsonPrimitive("two"));
         array.add(new JsonPrimitive("three"));
         json.add("list", array);
-
         String data = json.toString();
 
-        boolean success = client.sendEvent("my/tag", data);
-
-        assertTrue(success);
+        assertTrue(client.sendEvent("my/tag", data));
         verify(1, postRequestedFor(urlEqualTo("/hook/my/tag"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json"))
@@ -194,12 +187,7 @@ public class SaltClientTest {
                 .withHeader("Content-Type", "application/json")
                 .withBody(JSON_LOGOUT_RESPONSE)));
 
-        boolean success = client.logout();
-        verifyLogout(success);
-    }
-
-    private void verifyLogout(boolean success) {
-        assertTrue(success);
+        assertTrue(client.logout());
         verify(1, postRequestedFor(urlEqualTo("/logout"))
                 .withHeader("Accept", equalTo("application/json"))
                 .withHeader("Content-Type", equalTo("application/json"))
