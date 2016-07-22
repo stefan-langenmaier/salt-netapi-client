@@ -25,9 +25,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /**
  * Salt API client.
@@ -39,9 +36,6 @@ public class SaltClient {
 
     /** The connection factory object */
     private final ConnectionFactory connectionFactory;
-
-    /** The executor for async operations */
-    private final ExecutorService executor;
 
     private final Gson gson = new GsonBuilder().create();
 
@@ -61,32 +55,9 @@ public class SaltClient {
      * @param connectionFactory ConnectionFactory implementation
      */
     public SaltClient(URI url, ConnectionFactory connectionFactory) {
-        this(url, connectionFactory, Executors.newCachedThreadPool());
-    }
-
-    /**
-     * Constructor for connecting to a given URL.
-     *
-     * @param url the Salt API URL
-     * @param executor ExecutorService to be used for async operations
-     */
-    public SaltClient(URI url, ExecutorService executor) {
-        this(url, new HttpClientConnectionFactory(), executor);
-    }
-
-    /**
-     * Constructor for connecting to a given URL using a specific connection factory.
-     *
-     * @param url the Salt API URL
-     * @param connectionFactory ConnectionFactory implementation
-     * @param executor ExecutorService to be used for async operations
-     */
-    public SaltClient(URI url, ConnectionFactory connectionFactory,
-            ExecutorService executor) {
         // Put the URL in the config
         config.put(ClientConfig.URL, url);
         this.connectionFactory = connectionFactory;
-        this.executor = executor;
     }
 
     /**
@@ -147,21 +118,6 @@ public class SaltClient {
     }
 
     /**
-     * Asynchronously perform login and return a Future with the token.
-     * <p>
-     * {@code POST /login}
-     *
-     * @param username the username
-     * @param password the password
-     * @param eauth the eauth type
-     * @return Future containing the authentication token
-     */
-    public Future<Token> loginAsync(final String username, final String password,
-            final AuthModule eauth) {
-        return executor.submit(() -> login(username, password, eauth));
-    }
-
-    /**
      * Perform logout and clear the session token from the config.
      * <p>
      * {@code POST /logout}
@@ -181,17 +137,6 @@ public class SaltClient {
     }
 
     /**
-     * Asynchronously perform logout and clear the session token from the config.
-     * <p>
-     * {@code POST /logout}
-     *
-     * @return Future containing a boolean result, true if logout was successful
-     */
-    public Future<Boolean> logoutAsync() {
-        return executor.submit(() -> (Boolean) this.logout());
-    }
-
-    /**
      * Query statistics from the CherryPy Server.
      * <p>
      * {@code GET /stats}
@@ -204,17 +149,6 @@ public class SaltClient {
     }
 
     /**
-     * Asynchronously query statistics from the CherryPy Server.
-     * <p>
-     * {@code GET /stats}
-     *
-     * @return Future containing the stats
-     */
-    public Future<Stats> statsAsync() {
-        return executor.submit(this::stats);
-    }
-
-    /**
      * Returns a WebSocket @ClientEndpoint annotated object connected
      * to the /ws ServerEndpoint.
      * <p>
@@ -222,8 +156,7 @@ public class SaltClient {
      * to register/unregister for stream event notifications as well as close the event
      * stream.
      * <p>
-     * Note: {@link SaltClient#login(String, String, AuthModule)} or
-     * {@link SaltClient#loginAsync(String, String, AuthModule)} must be called prior
+     * Note: {@link SaltClient#login(String, String, AuthModule)} must be called prior
      * to calling this method.
      * <p>
      * {@code GET /events}
@@ -255,20 +188,6 @@ public class SaltClient {
                 .create("/hook/" + tag, JsonParser.MAP, config)
                 .getResult(eventData);
         return Boolean.TRUE.equals(result.get("success"));
-    }
-
-    /**
-     * Asynchronously trigger an event in Salt with the specified tag and data.
-     * <p>
-     * {@code POST /hook}
-     *
-     * @param eventTag the event tag
-     * @param eventData the event data. Must be valid JSON.
-     * @return Future containing a boolean value indicating the success or failure of
-     * triggering the event.
-     */
-    public Future<Boolean> sendEventAsync(final String eventTag, final String eventData) {
-        return executor.submit(() -> { return sendEvent(eventTag, eventData); });
     }
 
     /**
