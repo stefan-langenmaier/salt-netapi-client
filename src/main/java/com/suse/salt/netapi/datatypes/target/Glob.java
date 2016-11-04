@@ -3,7 +3,7 @@ package com.suse.salt.netapi.datatypes.target;
 /**
  * Target for specifying minions by glob pattern.
  */
-public class Glob implements Target<String> {
+public class Glob implements Target<String>, SshTarget<String> {
 
     public static final Glob ALL = new Glob("*");
 
